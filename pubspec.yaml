@@ -1,6 +1,6 @@
 name: ez_list_view
 description: "A defensive ListView.builder for Flutter that prevents crashes from unbounded constraints and provides clear debugging information."
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/Evgenii-Zinner/ez-list-view/
 repository: https://github.com/Evgenii-Zinner/ez-list-view/
 issue_tracker: https://github.com/Evgenii-Zinner/ez-list-view/issues
