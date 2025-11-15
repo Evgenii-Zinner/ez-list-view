@@ -1,3 +1,6 @@
+/// A Flutter package that provides a defensive, self-aware ListView.builder.
+library ez_list_view;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -11,11 +14,23 @@ import 'package:flutter/material.dart';
 /// 1. Renders a red border around itself to visually identify that a fix was applied.
 /// 2. Reports a detailed error to the console with the specific fix required.
 class EzListView extends StatelessWidget {
+  /// See [ListView.builder.itemBuilder].
   final IndexedWidgetBuilder itemBuilder;
+
+  /// See [ListView.builder.itemCount].
   final int? itemCount;
+
+  /// See [ListView.builder.physics].
   final ScrollPhysics? physics;
+
+  /// See [ListView.builder.padding].
   final EdgeInsetsGeometry? padding;
 
+  /// Creates a defensive, self-aware version of [ListView.builder].
+  ///
+  /// This widget automatically detects unbounded constraints and applies a fix
+  /// to prevent layout crashes, providing detailed debugging information in
+  /// debug mode.
   const EzListView.builder({
     super.key,
     required this.itemBuilder,
@@ -31,6 +46,7 @@ class EzListView extends StatelessWidget {
         final bool isUnboundedHeight = constraints.maxHeight.isInfinite;
         final bool isUnboundedWidth = constraints.maxWidth.isInfinite;
 
+        // If constraints are fine, just build the ListView.
         if (!isUnboundedHeight && !isUnboundedWidth) {
           return ListView.builder(
             itemBuilder: itemBuilder,
@@ -40,6 +56,7 @@ class EzListView extends StatelessWidget {
           );
         }
 
+        // --- FIX APPLIED ---
         Widget fixedListView = ListView.builder(
           itemBuilder: itemBuilder,
           itemCount: itemCount,
@@ -51,16 +68,17 @@ class EzListView extends StatelessWidget {
 
         final double fixedHeight;
         if (isUnboundedHeight) {
+          // Calculate a reasonable default height based on the screen size.
           final calculatedSafeHeight =
               mediaQuery.size.height - mediaQuery.padding.top - kToolbarHeight;
-          fixedHeight = calculatedSafeHeight * 0.5;
+          fixedHeight = calculatedSafeHeight * 0.5; // Use 50% as a default
         } else {
           fixedHeight = constraints.maxHeight;
         }
 
         final double fixedWidth;
         if (isUnboundedWidth) {
-          fixedWidth = mediaQuery.size.width * 0.5;
+          fixedWidth = mediaQuery.size.width * 0.5; // Use 50% as a default
         } else {
           fixedWidth = constraints.maxWidth;
         }
@@ -98,8 +116,6 @@ class EzListView extends StatelessWidget {
     String culprit = "an unknown parent";
     context.visitAncestorElements((element) {
       if (element.widget is Flex ||
-          element.widget is Column ||
-          element.widget is Row ||
           element.widget is ListView ||
           element.widget is CustomScrollView) {
         culprit = element.widget.runtimeType.toString();
