@@ -1,24 +1,40 @@
-# EzListView
+# EZ List View
 
-A defensive, self-aware `ListView.builder` for Flutter that prevents layout crashes from unbounded height constraints and educates the developer on the correct fix.
+A **crash-safe, self-aware** replacement for `ListView.builder` that prevents layout errors in `Column`, `Row`, `Flex`, and nested scroll views.
 
-## The Problem It Solves
+## 🛑 The Problem
 
-A common error for Flutter developers is placing a `ListView` inside a `Column` or other widget that provides infinite vertical space. This results in the dreaded "unbounded height" layout error, crashing the UI.
+Flutter's `ListView` tries to expand to fill all available space in its scroll direction. When placed inside a parent with **unbounded constraints**, it breaks the layout.
 
-`EzListView` is a drop-in replacement for `ListView.builder` that anticipates this problem. Instead of crashing, it applies a safe, bounded height and provides clear, actionable feedback to help you fix the layout permanently.
+Common scenarios that cause this crash:
+*   Placing a vertical list inside a **`Column`**.
+*   Placing a horizontal list inside a **`Row`**.
+*   Nesting it inside another **`ListView`**, **`CustomScrollView`**, or **`SingleChildScrollView`** (NestedListView scenario).
+*   Using it inside a **`Flex`** or unconstrained **`Card`**.
+
+Instead of a simple error, this often breaks the build process, causing the UI to vanish and spamming the console with:
+> "Vertical viewport was given unbounded height."
+> "RenderBox was not laid out: RenderViewport... NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE"
+> "Failed assertion: ... 'hasSize'"
+
+## ✅ The EZ Solution
+
+`EzListView` is a defensive wrapper that detects these unbounded constraints before they cause damage:
+
+*   **Auto-Detection:** Instantly identifies if it's in a `Column`, `Row`, or other unbounded parent.
+*   **Crash Prevention:** Automatically applies a safe, bounded size to ensure the widget renders visible content instead of breaking.
+*   **Developer Feedback:**
+    *   **Debug Mode:** Displays a **red border** and logs a clear warning identifying the exact parent causing the issue (e.g., "Unbounded height detected in Column").
+    *   **Release Mode:** Silently fixes the layout so your users never see a broken screen.
 
 ## ✨ Features
 
-*   **Crash Prevention:** Automatically detects when it's given unbounded height and applies a default height to prevent a layout crash.
-*   **Developer Education:** In **debug mode**, it reports a detailed error to the console, identifying the parent widget causing the issue and explaining how to fix it (e.g., "wrap EzListView in an Expanded widget").
-*   **Visual Debugging:** In **debug mode**, it renders a red border around itself to visually highlight exactly which list was automatically corrected.
-*   **Drop-in Replacement:** Designed to be a direct substitute for `ListView.builder`, using the same constructor parameters.
-*   **Release-Mode Safe:** In release builds, the debugging aids are disabled. The widget silently applies the height fix without any visual indicators or console logs.
+*   **Drop-in Replacement:** Same API as `ListView.builder`.
+*   **Omni-Directional Safety:** Handles both unbounded height (Vertical) and width (Horizontal).
+*   **SEO & Discoverability:** Solves issues with `Column`, `Row`, `NestedListView`, `Flex`, and `Card`.
+*   **Zero Dependencies:** Lightweight and pure Flutter.
 
 ## 📦 Installation
-
-Run this command to add the package to your project:
 
 ```shell
 flutter pub add ez_list_view
@@ -26,78 +42,41 @@ flutter pub add ez_list_view
 
 ## 🚀 Usage
 
-Use `EzListView.builder` exactly as you would use `ListView.builder`.
+Simply replace `ListView.builder` with `EzListView.builder`.
 
-### Example: The "Wrong" Way (That Won't Crash)
-
-If you place `EzListView` in a `Column`, it won't crash.
-
+This normally crashes in a Column, but is safe with EzListView:
 ```dart
-// lib/main.dart
-import 'package:flutter/material.dart';
-import 'package:ez_list_view/ez_list_view.dart';
-
-void main() => runApp(const MyApp());
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('EzListView Demo')),
-        body: Column( // This Column provides unbounded height
-          children: [
-            const Text('Header Text'),
-            // This would normally crash, but EzListView handles it.
-            EzListView.builder(
-              itemCount: 50,
-              itemBuilder: (context, index) => ListTile(
-                title: Text('Item #$index'),
-              ),
-            ),
-            const Text('Footer Text'),
-          ],
-        ),
-      ),
-    );
-  }
-}
+Column(
+  children: [
+    Text('Header'),
+    EzListView.builder(
+      itemCount: 20,
+      itemBuilder: (context, index) => ListTile(title: Text('Item $index')),
+    ),
+  ],
+)
 ```
 
-In debug mode, this will result in:
-1.  A **detailed error message** in your console explaining the problem and solution.
-2.  A **red box** rendered around the `EzListView` on screen.
-
-### Example: The "Correct" Way
-
-To fix the layout permanently, wrap `EzListView` in a widget that provides bounded height, like `Expanded`.
+### The "Correct" Fix
+While `EzListView` prevents the crash, the best practice is to provide constraints. `EzListView` helps you find where this is needed:
 
 ```dart
-// ...
-body: Column(
+Column(
   children: [
-    const Text('Header Text'),
-    // ✅ CORRECT: Expanded provides the ListView with finite space.
+    Text('Header'),
     Expanded(
       child: EzListView.builder(
-        itemCount: 50,
-        itemBuilder: (context, index) => ListTile(
-          title: Text('Item #$index'),
-        ),
+        // ...
       ),
     ),
-    const Text('Footer Text'),
   ],
-),
-//...
+)
 ```
 
 ## 🤝 Contributing
 
-Contributions are welcome! If you have a feature request, bug report, or want to contribute to the code, please feel free to open an issue or submit a pull request on the [GitHub repository](https://github.com/Evgenii-Zinner/ez_list_view/).
+Contributions are welcome! Please feel free to open an issue or submit a pull request on [GitHub](https://github.com/Evgenii-Zinner/ez_list_view).
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - see the [LICENSE](LICENSE) file for details.

@@ -1,18 +1,12 @@
-/// A Flutter package that provides a defensive, self-aware ListView.builder.
-library ez_list_view;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// A defensive, self-aware version of ListView.builder.
+/// A defensive, self-aware version of [ListView.builder].
 ///
-/// If it detects that its parent is providing unbounded constraints (e.g., inside
-/// a Column or a Row), it automatically imposes bounded dimensions to prevent
-/// a layout crash.
-///
-/// In debug mode, it also:
-/// 1. Renders a red border around itself to visually identify that a fix was applied.
-/// 2. Reports a detailed error to the console with the specific fix required.
+/// Features:
+/// *   **Crash Prevention:** Automatically detects unbounded constraints (e.g., inside [Column] or [Row]) and applies a safe fallback size.
+/// *   **Debug Feedback:** In debug mode, displays a red border and logs a detailed error explaining the issue and the fix.
+/// *   **Drop-in Replacement:** Supports the same API as [ListView.builder].
 class EzListView extends StatelessWidget {
   /// See [ListView.builder.itemBuilder].
   final IndexedWidgetBuilder itemBuilder;
@@ -56,7 +50,7 @@ class EzListView extends StatelessWidget {
           );
         }
 
-        // --- FIX APPLIED ---
+        // --- Apply safe fallback for unbounded constraints ---
         Widget fixedListView = ListView.builder(
           itemBuilder: itemBuilder,
           itemCount: itemCount,
@@ -84,10 +78,10 @@ class EzListView extends StatelessWidget {
         }
 
         if (kDebugMode) {
-          // Find the culprit and report a detailed error.
+          // Identify the parent widget causing the issue and report a detailed error.
           _reportError(context, isUnboundedWidth, isUnboundedHeight);
 
-          // Wrap with a visual indicator.
+          // Wrap with a visual indicator to highlight the problematic widget.
           return Container(
             decoration: BoxDecoration(
               border: Border.all(color: Colors.red, width: 2.5),
@@ -101,7 +95,7 @@ class EzListView extends StatelessWidget {
           );
         }
 
-        // In release mode, just apply the fix silently.
+        // In release mode, apply the fix silently to prevent a crash.
         return SizedBox(
           width: fixedWidth,
           height: fixedHeight,

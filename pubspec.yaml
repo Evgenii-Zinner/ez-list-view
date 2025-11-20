@@ -1,9 +1,20 @@
 name: ez_list_view
-description: "A defensive ListView.builder for Flutter that prevents crashes from unbounded constraints and provides clear debugging information."
-version: 0.0.2
-homepage: https://github.com/Evgenii-Zinner/ez-list-view/
-repository: https://github.com/Evgenii-Zinner/ez-list-view/
+description: A crash-safe ListView that automatically handles unbounded height constraints in Columns and Rows.
+version: 0.0.3
+homepage: https://github.com/Evgenii-Zinner/ez-list-view
+repository: https://github.com/Evgenii-Zinner/ez-list-view
 issue_tracker: https://github.com/Evgenii-Zinner/ez-list-view/issues
+documentation: https://flutter.ezinner.com/ez_list_view
+topics:
+  - flutter
+  - ez-flutter
+  - listview
+  - layout
+  - scrollable
+funding:
+  - https://github.com/sponsors/Evgenii-Zinner/
+  - https://thanks.dev/u/gh/evgenii-zinner
+  - https://buymeacoffee.com/evgeniizinner
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -17,5 +28,3 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-
-flutter:
