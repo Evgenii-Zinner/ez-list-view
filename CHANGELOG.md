@@ -1,3 +1,9 @@
+## 0.0.4
+
+* **Feat:** Full support for `ListView.builder` API (added `shrinkWrap`, `scrollDirection`, `physics`, etc.).
+* **Feat:** Refined crash detection to respect `shrinkWrap: true`.
+* **Tests:** Added comprehensive test suite for various layout scenarios.
+
 ## 0.0.3
 
 * **Docs:** Added `FUNDING.yml` and updated `pubspec.yaml` metadata.

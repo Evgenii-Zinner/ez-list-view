@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// A defensive, self-aware version of [ListView.builder].
@@ -14,11 +15,56 @@ class EzListView extends StatelessWidget {
   /// See [ListView.builder.itemCount].
   final int? itemCount;
 
+  /// See [ListView.builder.scrollDirection].
+  final Axis scrollDirection;
+
+  /// See [ListView.builder.reverse].
+  final bool reverse;
+
+  /// See [ListView.builder.controller].
+  final ScrollController? controller;
+
+  /// See [ListView.builder.primary].
+  final bool? primary;
+
   /// See [ListView.builder.physics].
   final ScrollPhysics? physics;
 
+  /// See [ListView.builder.shrinkWrap].
+  final bool shrinkWrap;
+
   /// See [ListView.builder.padding].
   final EdgeInsetsGeometry? padding;
+
+  /// See [ListView.builder.addAutomaticKeepAlives].
+  final bool addAutomaticKeepAlives;
+
+  /// See [ListView.builder.addRepaintBoundaries].
+  final bool addRepaintBoundaries;
+
+  /// See [ListView.builder.addSemanticIndexes].
+  final bool addSemanticIndexes;
+
+  /// See [ListView.builder.cacheExtent].
+  final double? cacheExtent;
+
+  /// See [ListView.builder.semanticChildCount].
+  final int? semanticChildCount;
+
+  /// See [ListView.builder.dragStartBehavior].
+  final DragStartBehavior dragStartBehavior;
+
+  /// See [ListView.builder.keyboardDismissBehavior].
+  final ScrollViewKeyboardDismissBehavior keyboardDismissBehavior;
+
+  /// See [ListView.builder.restorationId].
+  final String? restorationId;
+
+  /// See [ListView.builder.clipBehavior].
+  final Clip clipBehavior;
+
+  /// See [ListView.builder.findChildIndexCallback].
+  final ChildIndexGetter? findChildIndexCallback;
 
   /// Creates a defensive, self-aware version of [ListView.builder].
   ///
@@ -29,8 +75,23 @@ class EzListView extends StatelessWidget {
     super.key,
     required this.itemBuilder,
     this.itemCount,
+    this.scrollDirection = Axis.vertical,
+    this.reverse = false,
+    this.controller,
+    this.primary,
     this.physics,
+    this.shrinkWrap = false,
     this.padding,
+    this.addAutomaticKeepAlives = true,
+    this.addRepaintBoundaries = true,
+    this.addSemanticIndexes = true,
+    this.cacheExtent,
+    this.semanticChildCount,
+    this.dragStartBehavior = DragStartBehavior.start,
+    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
+    this.restorationId,
+    this.clipBehavior = Clip.hardEdge,
+    this.findChildIndexCallback,
   });
 
   @override
@@ -40,46 +101,59 @@ class EzListView extends StatelessWidget {
         final bool isUnboundedHeight = constraints.maxHeight.isInfinite;
         final bool isUnboundedWidth = constraints.maxWidth.isInfinite;
 
+        final bool isVertical = scrollDirection == Axis.vertical;
+
+        // Determine if we need to apply a fix.
+        // A ListView crashes if its scroll direction is unbounded and shrinkWrap is false,
+        // OR if its cross-axis is unbounded.
+        bool needsFixHeight = false;
+        bool needsFixWidth = false;
+
+        if (isVertical) {
+          if (isUnboundedHeight && !shrinkWrap) needsFixHeight = true;
+          if (isUnboundedWidth) needsFixWidth = true;
+        } else {
+          if (isUnboundedWidth && !shrinkWrap) needsFixWidth = true;
+          if (isUnboundedHeight) needsFixHeight = true;
+        }
+
         // If constraints are fine, just build the ListView.
-        if (!isUnboundedHeight && !isUnboundedWidth) {
-          return ListView.builder(
-            itemBuilder: itemBuilder,
-            itemCount: itemCount,
-            padding: padding,
-            physics: physics,
-          );
+        if (!needsFixHeight && !needsFixWidth) {
+          return _buildListView();
         }
 
         // --- Apply safe fallback for unbounded constraints ---
-        Widget fixedListView = ListView.builder(
-          itemBuilder: itemBuilder,
-          itemCount: itemCount,
-          padding: padding,
-          physics: physics,
-        );
-
         final mediaQuery = MediaQuery.of(context);
 
         final double fixedHeight;
-        if (isUnboundedHeight) {
-          // Calculate a reasonable default height based on the screen size.
-          final calculatedSafeHeight =
-              mediaQuery.size.height - mediaQuery.padding.top - kToolbarHeight;
-          fixedHeight = calculatedSafeHeight * 0.5; // Use 50% as a default
+        if (needsFixHeight) {
+          if (isUnboundedHeight) {
+            // Calculate a reasonable default height based on the screen size.
+            final calculatedSafeHeight = mediaQuery.size.height -
+                mediaQuery.padding.top -
+                kToolbarHeight;
+            fixedHeight = calculatedSafeHeight * 0.5; // Use 50% as a default
+          } else {
+            fixedHeight = constraints.maxHeight;
+          }
         } else {
           fixedHeight = constraints.maxHeight;
         }
 
         final double fixedWidth;
-        if (isUnboundedWidth) {
-          fixedWidth = mediaQuery.size.width * 0.5; // Use 50% as a default
+        if (needsFixWidth) {
+          if (isUnboundedWidth) {
+            fixedWidth = mediaQuery.size.width * 0.5; // Use 50% as a default
+          } else {
+            fixedWidth = constraints.maxWidth;
+          }
         } else {
           fixedWidth = constraints.maxWidth;
         }
 
         if (kDebugMode) {
           // Identify the parent widget causing the issue and report a detailed error.
-          _reportError(context, isUnboundedWidth, isUnboundedHeight);
+          _reportError(context, needsFixWidth, needsFixHeight);
 
           // Wrap with a visual indicator to highlight the problematic widget.
           return Container(
@@ -90,7 +164,7 @@ class EzListView extends StatelessWidget {
             child: SizedBox(
               width: fixedWidth,
               height: fixedHeight,
-              child: fixedListView,
+              child: _buildListView(),
             ),
           );
         }
@@ -99,9 +173,33 @@ class EzListView extends StatelessWidget {
         return SizedBox(
           width: fixedWidth,
           height: fixedHeight,
-          child: fixedListView,
+          child: _buildListView(),
         );
       },
+    );
+  }
+
+  Widget _buildListView() {
+    return ListView.builder(
+      itemBuilder: itemBuilder,
+      itemCount: itemCount,
+      scrollDirection: scrollDirection,
+      reverse: reverse,
+      controller: controller,
+      primary: primary,
+      physics: physics,
+      shrinkWrap: shrinkWrap,
+      padding: padding,
+      addAutomaticKeepAlives: addAutomaticKeepAlives,
+      addRepaintBoundaries: addRepaintBoundaries,
+      addSemanticIndexes: addSemanticIndexes,
+      cacheExtent: cacheExtent,
+      semanticChildCount: semanticChildCount,
+      dragStartBehavior: dragStartBehavior,
+      keyboardDismissBehavior: keyboardDismissBehavior,
+      restorationId: restorationId,
+      clipBehavior: clipBehavior,
+      findChildIndexCallback: findChildIndexCallback,
     );
   }
 
@@ -141,6 +239,12 @@ class EzListView extends StatelessWidget {
           ErrorHint(
             'ACTION REQUIRED: For a permanent fix, you must wrap EzListView in a widget that provides bounded constraints, such as an Expanded or a SizedBox.',
           ),
+          if (shrinkWrap == false &&
+              ((scrollDirection == Axis.vertical && badHeight) ||
+                  (scrollDirection == Axis.horizontal && badWidth)))
+            ErrorHint(
+              'Alternatively, if the list is intended to be as small as its children, set shrinkWrap: true.',
+            ),
         ],
       ),
     );
